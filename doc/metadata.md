@@ -1,0 +1,7 @@
+- 121 classes
+- 30,336 records
+- Record distribution across classes
+  - max = 1979
+  - min = 9
+  - mean = 250
+  - median = 114

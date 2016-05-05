@@ -1,0 +1,33 @@
+apply plugin: 'java'
+apply plugin: 'eclipse'
+apply plugin: 'maven'
+
+group = 'collinm'
+version = '0'
+
+eclipse.classpath.downloadJavadoc = true
+
+// Repo's
+repositories {
+	mavenCentral()
+	mavenLocal()
+}
+
+// Dependencies
+dependencies {
+	//compile 'org.bytedeco:javacv:1.1'
+	//compile files('lib/opencv-310.jar')
+	compile 'net.imglib2:imglib2:2.9.0'
+	compile 'org.apache.spark:spark-core_2.10:1.6.1'
+	compile 'org.apache.spark:spark-mllib_2.10:1.6.1'
+	//compile 'org.apache.hadoop:hadoop-client:<hdfs-version>'
+}
+
+task javadocJar(type: Jar, dependsOn: check) {
+	classifier = 'javadoc'
+	from javadoc.destinationDir
+}
+
+artifacts {
+	archives javadocJar
+}
