@@ -72,6 +72,7 @@ From the call today:
     (Internet seems to think that ~96 pixels on each edge works well)
 - Ideas for data augmentaiton:
   - Flip image
+  - Rotate?
   - Mirror image
   - Invert color/greyscale
   - Zoom?
@@ -80,4 +81,25 @@ From the call today:
 --------------------
 
 **5/5/2015**
+
+Removing Spark-related feature extraction code and transitioning prototyped pipeline framework into something more usable (and using Java 8 Streams!). Reintegrating OpenCV (java wrapper). Creating fundamental data structures needed to store features.
+
+--------------------
+
+**5/6/2015**
+
+Finished design and majority of implementation of feature extraction pipeline framework.
+
+Implemented features (all under `collinm.framework.features`):
+- Image Histogram
+- Dimensions
+- Pixel Count
+
+Image histogram provides a vector of 255 values enumerating how many of each pixel value was present in the image. It's an obvious and probably not terribly useful feature, but it's a good baseline to start with. Obvious caveat is that different image sizes will have different numbers of pixels and will ultimately confuse the models. Underscores the need to normalize the images...
+
+Dimensions provides a vector of 2 values: height and width (in pixels). Simple feature to indicate size and shape. Of course, it's *not* rotation invariant, but that can be handled with data augmentation later.
+
+Pixel count provides a vector of 1 value (kept as a vector for consistency with other features): the total number of pixels in the image. This might end up being a better signal for image size than the dimension features above.
+
+Added a JSON DataSink (output) so that I can finally train and evaluate something in Spark. Next step is do the first experiment in Spark!
 

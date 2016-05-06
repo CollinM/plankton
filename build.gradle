@@ -16,11 +16,15 @@ repositories {
 // Dependencies
 dependencies {
 	//compile 'org.bytedeco:javacv:1.1'
-	//compile files('lib/opencv-310.jar')
-	compile 'net.imglib2:imglib2:2.9.0'
+	compile files('lib/opencv-310.jar')
+	compile 'org.javatuples:javatuples:1.2'
 	compile 'org.apache.spark:spark-core_2.10:1.6.1'
 	compile 'org.apache.spark:spark-mllib_2.10:1.6.1'
 	//compile 'org.apache.hadoop:hadoop-client:<hdfs-version>'
+}
+
+tasks.withType(Test) {
+    systemProperty "java.library.path", "lib/x64/opencv_java320.dll"
 }
 
 task javadocJar(type: Jar, dependsOn: check) {

@@ -1,7 +1,19 @@
 package collinm.framework;
 
-import java.io.Serializable;
+public abstract class Processor implements IProcessor {
 
-public interface Processor extends Serializable {
-	public Record process(Record r);
+	/**
+	 * Convenience method for the <code>Pipeline</code> to be able to use map
+	 * without every <code>Processor</code>'s <code>process</code> method having
+	 * to return the original <code>Record</code>.
+	 * 
+	 * @param r
+	 *            the target <code>Record</code>
+	 * @return the processed <code>Record</code>
+	 */
+	protected Record map_process(Record r) {
+		this.process(r);
+		return r;
+	}
+
 }
