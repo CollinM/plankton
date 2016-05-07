@@ -15,11 +15,21 @@ repositories {
 
 // Dependencies
 dependencies {
-	//compile 'org.bytedeco:javacv:1.1'
 	compile files('lib/opencv-310.jar')
+	// Utilities
 	compile 'org.javatuples:javatuples:1.2'
-	compile 'org.apache.spark:spark-core_2.10:1.6.1'
-	compile 'org.apache.spark:spark-mllib_2.10:1.6.1'
+	compile 'org.slf4j:slf4j-api:1.7.21'
+	compile 'ch.qos.logback:logback-classic:1.1.7'
+	// Spark
+	compile('org.apache.spark:spark-core_2.10:1.6.1') {
+	  // Excluding these transitive dependencies prevents SLF4J from complaining, but breaks Spark at runtime (in Eclipse)
+	  //exclude group: 'log4j'
+	  //exclude group: 'org.slf4j'
+	}
+	compile('org.apache.spark:spark-mllib_2.10:1.6.1') {
+	  //exclude group: 'log4j'
+	  //exclude group: 'org.slf4j'
+	}
 	//compile 'org.apache.hadoop:hadoop-client:<hdfs-version>'
 }
 

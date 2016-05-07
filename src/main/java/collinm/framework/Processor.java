@@ -1,5 +1,7 @@
 package collinm.framework;
 
+import collinm.framework.data.Record;
+
 public abstract class Processor implements IProcessor {
 
 	/**
@@ -16,4 +18,5 @@ public abstract class Processor implements IProcessor {
 		return r;
 	}
 
+	public void close() {};
 }

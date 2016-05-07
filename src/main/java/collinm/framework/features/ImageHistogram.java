@@ -4,8 +4,8 @@ import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 
 import collinm.framework.Processor;
-import collinm.framework.Record;
-import collinm.framework.Vector;
+import collinm.framework.data.Record;
+import collinm.framework.data.Vector;
 
 /**
  * Place a new <code>Vector</code> of length 255 at
@@ -23,7 +23,7 @@ public class ImageHistogram extends Processor {
 
 	@Override
 	public void process(Record r) {
-		Vector v = new Vector(255);
+		Vector v = new Vector(256);
 		Mat img = (Mat) r.get("img");
 
 		// This is somewhat bulky and ugly, but it's 30% faster than requesting

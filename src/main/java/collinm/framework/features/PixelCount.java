@@ -3,8 +3,8 @@ package collinm.framework.features;
 import org.opencv.core.Mat;
 
 import collinm.framework.Processor;
-import collinm.framework.Record;
-import collinm.framework.Vector;
+import collinm.framework.data.Record;
+import collinm.framework.data.Vector;
 
 /**
  * Place a new <code>Vector</code> of length 1 at

@@ -103,3 +103,32 @@ Pixel count provides a vector of 1 value (kept as a vector for consistency with 
 
 Added a JSON DataSink (output) so that I can finally train and evaluate something in Spark. Next step is do the first experiment in Spark!
 
+--------------------
+
+**5/7/2015**
+
+- Serialization and deserialization with JSON are working smoothly (Record object -> JSON -> LabeledPoint). This should be the last functional item required before running a feature extraction pipeline.
+- Removed all `println`'s and replaced them with proper logging (SLF4J + logback).
+
+Refactored the package structure of the project to give everything better logical grouping:
+- `collinm.framework`: feature extraction framework componenets
+- `collinm.framework.data`: Runtime data objects
+- `collinm.framework.io`: Input/Output (sources and sinks)
+- `collinm.framework.json`: JSON serialization and deserialization
+- `collinm.plankton.training`: feature experiments
+- `collinm.plankton.testing`: Code to train and evaluate models in Spark
+
+Ran the first feature extraction pipeline!
+
+**Experiment 1**: `collinm.plankton.training.Experiment1.java`  
+Features:
+- histogram of pixel values (0-255)
+Results/Metrics:
+- Precision = 0.2126
+- Recall = 0.2126
+- F1 = 0.2126
+
+Questions:
+- How does Spark know which attribute of the Java class to predict? Is it as simple as the one named 'label'?
+- spark.ml logistic regression is limited to binary classification...?
+

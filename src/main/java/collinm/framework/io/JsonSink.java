@@ -1,4 +1,4 @@
-package collinm.framework.sinks;
+package collinm.framework.io;
 
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -6,10 +6,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.module.SimpleModule;
 
 import collinm.framework.DataSink;
-import collinm.framework.Record;
+import collinm.framework.data.Record;
+import collinm.framework.json.RecordModule;
 
 /**
  * Stores each <code>Record</code> as a JSON object in a larger JSON document
@@ -32,14 +32,14 @@ public class JsonSink implements DataSink {
 	public JsonSink(Path filePath) throws IOException {
 		// Configure JSON serialization
 		this.mapper = new ObjectMapper();
-		SimpleModule module = new SimpleModule();
-		module.addSerializer(Record.class, new JsonRecordSerializer());
-		this.mapper.registerModule(module);
+		this.mapper.registerModule(new RecordModule());
 
 		// Open output file
+		if (!Files.exists(filePath.getParent()))
+			Files.createDirectories(filePath.getParent());
 		this.writer = Files.newBufferedWriter(filePath);
 		// Write beginning
-		this.writer.write("{n\\t\"data\": [\n\t\t");
+		this.writer.write("{\"data\": [\n");
 		this.first = true;
 	}
 

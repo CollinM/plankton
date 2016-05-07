@@ -1,4 +1,4 @@
-package collinm.framework.sources;
+package collinm.framework.io;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -10,9 +10,11 @@ import java.util.stream.Stream;
 import org.javatuples.Pair;
 import org.opencv.core.Mat;
 import org.opencv.imgcodecs.Imgcodecs;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import collinm.framework.DataSource;
-import collinm.framework.Record;
+import collinm.framework.data.Record;
 
 /**
  * Loads the plankton training data lazily.
@@ -21,6 +23,8 @@ import collinm.framework.Record;
  */
 public class PlanktonSource implements DataSource {
 
+	private static Logger logger = LoggerFactory.getLogger(PlanktonSource.class);
+	
 	public static final String IMAGE_KEY = "img";
 	public static final String GOLD_LABEL_KEY = "gold-label";
 
@@ -37,16 +41,15 @@ public class PlanktonSource implements DataSource {
 		try (Stream<Path> dirs = Files.list(dirPath)) {
 			dirs.forEach(d -> {
 				String label = d.getFileName().toString();
-				System.out.println("Processing " + label);
 				// In each folder, store path to image and label
 				try (Stream<Path> files = Files.list(d)) {
 					files.forEach(f -> this.inputFiles.addLast(Pair.with(f, label)));
 				} catch (IOException io) {
-					io.printStackTrace();
+					logger.error("Problem occurred while listing direcotory contents: [" + d.toString() + "]", io);
 				}
 			});
 		} catch (IOException io) {
-			io.printStackTrace();
+			logger.error("Problem occurred while listing direcotory contents: [" + dirPath.toString() + "]", io);
 		}
 	}
 

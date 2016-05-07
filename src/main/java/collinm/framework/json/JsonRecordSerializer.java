@@ -1,4 +1,4 @@
-package collinm.framework.sinks;
+package collinm.framework.json;
 
 import java.io.IOException;
 import java.util.Iterator;
@@ -10,9 +10,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 
-import collinm.framework.Record;
-import collinm.framework.Vector;
-import collinm.framework.sources.PlanktonSource;
+import collinm.framework.data.Record;
+import collinm.framework.data.Vector;
+import collinm.framework.io.PlanktonSource;
 
 public class JsonRecordSerializer extends JsonSerializer<Record> {
 
@@ -22,18 +22,23 @@ public class JsonRecordSerializer extends JsonSerializer<Record> {
 
 		// Metadata
 		jgen.writeStringField("ID", record.id());
-		jgen.writeStringField("label", (String) record.get(PlanktonSource.GOLD_LABEL_KEY));
+		jgen.writeNumberField("label", (Integer) record.get(PlanktonSource.GOLD_LABEL_KEY));
 
 		// Numerical features
 		List<String> keys = record.getKeys();
 		keys = keys.stream().sorted().filter(s -> s.startsWith("feature")).collect(Collectors.toList());
 		jgen.writeArrayFieldStart("features");
+		int size = 0;
 		for (String k : keys) {
 			Iterator<Double> iter = ((Vector) record.get(k)).getIterator();
-			while (iter.hasNext())
+			while (iter.hasNext()) {
 				jgen.writeNumber(iter.next());
+				size++;
+			}
 		}
 		jgen.writeEndArray();
+		// Write length of features array for convenience on deserialization
+		jgen.writeNumberField("features-size", size);
 
 		// Finish
 		jgen.writeEndObject();

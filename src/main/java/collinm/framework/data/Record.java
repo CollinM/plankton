@@ -1,4 +1,4 @@
-package collinm.framework;
+package collinm.framework.data;
 
 import java.util.ArrayList;
 import java.util.HashMap;
