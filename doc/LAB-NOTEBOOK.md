@@ -182,5 +182,7 @@ Results of 5-fold logistic regression ((Full results)[results/experiment4.csv]):
 - Average F1 = 0.3366
 Comments: ~5% increase on precision, ~5% increase on recall, and ~5% increase on F1! Normalizing the inputs would seem to help substantially. It's worth noting here that the normalization routine scales the image 1:1 up/down to the desired max edge length based on the longest dimension. After the scaling is done, the shorter dimension is padded with white pixels (255, 255, 255) to achieve a square image. I've explicitly avoided scaling each dimension at different rates as it seems like it would throw out signal, especially considering that the resulting image would have many more interpolated pixel values.
 
+For the sake of convenience, here's the command for running cross-validated logistic regression from the command line (working directory = project directory): `spark-submit --class collinm.plankton.testing.LogisticRegressionRunner --master local[7] build\libs\plankton-0-fat.jar output\experiment<num>.json doc\results\experiment<num>.csv <num-folds>`
+
 Questions:
 - Is there any value in normalizing feature vector values? That is, are various algorithms sensitive to the absolute size of an individual feature?
