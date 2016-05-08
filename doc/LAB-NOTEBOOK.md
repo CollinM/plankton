@@ -144,7 +144,7 @@ Questions:
 - Generalized Logistic Regression Runner so that input, output, and k values are *not* hard-coded. Now works properly with `spark-submit`
 - Added image size normalization functionality
 
-Continuation of experiment 1: 5-fold cross-validation of logistic regression with histogram features (see yesterday for feature details). (Full results)[results/experiment1.csv]
+Continuation of experiment 1: 5-fold cross-validation of logistic regression with histogram features (see yesterday for feature details). [Full results](results/experiment1.csv)
 - Average Precision = 0.1876
 - Average Recall = 0.2114
 - Average F1 = 0.1988
@@ -153,7 +153,7 @@ Continuation of experiment 1: 5-fold cross-validation of logistic regression wit
 Features:
 - histogram of pixel values (0-255)
 - dimensions of image (height, width)
-Results of 5-fold logistic regression ((Full results)[results/experiment2.csv]):
+Results of 5-fold logistic regression ([Full results](results/experiment2.csv)):
 - Average Precision = 0.2620
 - Average Recall = 0.3055
 - Average F1 = 0.2821
@@ -164,7 +164,7 @@ Features:
 - histogram of pixel values (0-255)
 - dimensions of image (height, width)
 - pixel count
-Results of 5-fold logistic regression ((Full results)[results/experiment3.csv]):
+Results of 5-fold logistic regression ([Full results](results/experiment3.csv)):
 - Average Precision = 0.2682
 - Average Recall = 0.3108
 - Average F1 = 0.2879
@@ -176,7 +176,7 @@ Features:
 - pixel count
 - Normalize image size to 128x128
 - histogram of pixel values (0-255)
-Results of 5-fold logistic regression ((Full results)[results/experiment4.csv]):
+Results of 5-fold logistic regression ([Full results](results/experiment4.csv)):
 - Average Precision = 0.3169
 - Average Recall = 0.3590
 - Average F1 = 0.3366
