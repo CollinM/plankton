@@ -13,9 +13,9 @@ Investigated data: [data about data](metadata.md)
 
 Many classes seem under-represented. Of the 121 classes, half of them have <115 records in that class. These are going to be more difficult to predict, unless they have very little variance between images (unlikely). And then there are 4 labels with over 1000 records. Should these be down-sampled? Probably not, already not very much data present.
 
-[This histogram](doc/imgs/plankton_classes_counts.png) is a nice visualization of the size of each class and how that contributes to the overall training data. It makes it fairly clear that half of the data comes from classes with ~500 records or fewer. And about a fifth of it comes from classes with more than 1000 records.
+[This histogram](imgs/plankton_classes_counts.png) is a nice visualization of the size of each class and how that contributes to the overall training data. It makes it fairly clear that half of the data comes from classes with ~500 records or fewer. And about a fifth of it comes from classes with more than 1000 records.
 
-[Image sizes](doc/imgs/image_sizes.png) are also much less consistent than I thought. Will need to look into how to handle that.
+[Image sizes](imgs/image_sizes.png) are also much less consistent than I thought. Will need to look into how to handle that.
 
 --------------------
 
@@ -131,4 +131,18 @@ Results/Metrics:
 Questions:
 - How does Spark know which attribute of the Java class to predict? Is it as simple as the one named 'label'?
 - spark.ml logistic regression is limited to binary classification...?
+
+--------------------
+
+**5/8/2015**
+
+- Standard Spark way of measuring performance metrics is too strict, so I implemented my own: `collinm.plankton.testing.ConfusionMatrix`. It doesn't work with RDDs, but the performance data is small enought that it doesn't matter.
+- Refactored some IO code to make it more reusable, namely reading in the processed training data.
+- Added functionality to enable stratified sampling and thus cross validation
+
+Continuation of experiment 1: 5-fold cross-validation of logistic regression with histogram features (see yesterday for feature details). (Full results)[results/experiment1.csv]
+
+Average Precision = 0.1876
+Average Recall = 0.2114
+Average F1 = 0.1988
 

@@ -1,80 +1,83 @@
 package collinm.plankton.testing;
 
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.mllib.classification.LogisticRegressionModel;
 import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS;
-import org.apache.spark.mllib.evaluation.MulticlassMetrics;
 import org.apache.spark.mllib.regression.LabeledPoint;
+import org.javatuples.Triplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-
-import collinm.framework.data.TempDeserCollection;
-import collinm.framework.json.RecordModule;
-import scala.Tuple2;
+import collinm.framework.data.LabeledPointWithId;
 
 public class LogisticRegressionRunner {
 
 	private static Logger logger = LoggerFactory.getLogger(LogisticRegressionRunner.class);
 
 	public static void main(String[] args) {
-		SparkConf conf = new SparkConf().setAppName("LogisticRegression").setMaster("local[4]");
+		// Setup Spark
+		SparkConf conf = new SparkConf().setAppName("LogisticRegression").setMaster("local[7]");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		//SQLContext sqlContext = new SQLContext(sc);
+		int k = 5;
 
-		ObjectMapper mapper = new ObjectMapper();
-		mapper.registerModule(new RecordModule());
+		List<ConfusionMatrix> metrics = new ArrayList<>(k);
 
-		// TODO make this file dynamic
-		// TODO make this into a function...
-		logger.info("Reading training data");
-		TempDeserCollection temp = null;
-		try (BufferedReader reader = Files.newBufferedReader(Paths.get("output/experiment1.json"))) {
-			temp = mapper.readValue(reader, TempDeserCollection.class);
-		} catch (IOException io) {
-			logger.error("Could not read input file!", io);
+		// Read data
+		logger.info("Reading in data");
+		List<JavaRDD<LabeledPoint>> samples = PlanktonUtil.readData(Paths.get("output/experiment1.json"), sc, k);
+
+		for (int split = 0; split < k; split++) {
+			logger.info("Starting batch [" + split + "]");
+
+			JavaRDD<LabeledPoint> train = sc.emptyRDD();
+			JavaRDD<LabeledPoint> test = null;
+			for (int i = 0; i < k; i++) {
+				if (i != split)
+					train = train.union(samples.get(i));
+				else
+					test = samples.get(i);
+			}
+			train.cache();
+
+			logger.info("Training model");
+			LogisticRegressionModel model = new LogisticRegressionWithLBFGS().setNumClasses(121).run(train.rdd());
+			logger.info("Done");
+
+			train.unpersist();
+
+			logger.info("Evaluating performance");
+			List<Triplet<String, Double, Double>> idLabelPredictions = test.map(
+					p -> {
+						Double prediction = model.predict(p.features());
+						String id = ((LabeledPointWithId) p).getId();
+						return Triplet.with(id, p.label(), prediction);
+					}).collect();
+			
+			ConfusionMatrix cm = new ConfusionMatrix(121);
+			metrics.add(cm);
+			cm.measure(idLabelPredictions);
+			
+			logger.info("Batch [" + split + "]: Precision = " + cm.precision());
+			logger.info("Batch [" + split + "]: Recall = " + cm.recall());
+			logger.info("Batch [" + split + "]: F1 = " + cm.f1());
 		}
-		//DataFrame training = sqlContext.createDataFrame(temp.points, LabeledPointWithId.class);
-		JavaRDD<LabeledPoint> rdd = sc.parallelize(temp.points);
 		
-		JavaRDD<LabeledPoint>[] splits = rdd.randomSplit(new double[] {0.8, 0.2});
-		JavaRDD<LabeledPoint> train = splits[0].cache();
-		JavaRDD<LabeledPoint> test = splits[1];
-		logger.info("Done");
-		
-		logger.info("Training model");
-		LogisticRegressionModel model = new LogisticRegressionWithLBFGS()
-				.setNumClasses(121)
-				.run(train.rdd());
-		logger.info("Done");
-		
-		logger.info("Evaluating performance");
-		JavaRDD<Tuple2<Object, Object>> predictionAndLabels = test.map(
-			      new Function<LabeledPoint, Tuple2<Object, Object>>() {
-			        public Tuple2<Object, Object> call(LabeledPoint p) {
-			          Double prediction = model.predict(p.features());
-			          return new Tuple2<Object, Object>(prediction, p.label());
-			        }
-			      }
-			    );
-		MulticlassMetrics metrics = new MulticlassMetrics(predictionAndLabels.rdd());
-	    double precision = metrics.precision();
-	    double recall = metrics.recall();
-	    double f1 = metrics.fMeasure();
-	    logger.info("Precision = " + precision);
-	    logger.info("Recall = " + recall);
-	    logger.info("F1 = " + f1);
-	    
-	    sc.close();
+		PlanktonUtil.writeMetrics(Paths.get("doc/results/experiment1.csv"), metrics);
+
+		double precision = metrics.stream().mapToDouble(c -> c.precision() / k).reduce(Double::sum).getAsDouble();
+		double recall = metrics.stream().mapToDouble(c -> c.recall() / k).reduce(Double::sum).getAsDouble();
+		double f1 = metrics.stream().mapToDouble(c -> c.f1() / k).reduce(Double::sum).getAsDouble();
+		logger.info("Average Precision = " + precision);
+		logger.info("Average Recall = " + recall);
+		logger.info("Average F1 = " + f1);
+
+		sc.close();
 	}
 
 }
