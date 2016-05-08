@@ -13,10 +13,17 @@ repositories {
 	mavenLocal()
 }
 
+configurations {
+    fat {
+        transitive = true
+    }
+}
+
 // Dependencies
 dependencies {
 	compile files('lib/opencv-310.jar')
 	// Utilities
+	compile 'com.google.guava:guava:19.0'
 	compile 'org.javatuples:javatuples:1.2'
 	compile 'org.slf4j:slf4j-api:1.7.21'
 	compile 'ch.qos.logback:logback-classic:1.1.7'
@@ -30,11 +37,33 @@ dependencies {
 	  //exclude group: 'log4j'
 	  //exclude group: 'org.slf4j'
 	}
-	//compile 'org.apache.hadoop:hadoop-client:<hdfs-version>'
+
+	// Package in the fat jar so they're usable at runtime!
+	fat 'com.google.guava:guava:19.0'
+	fat 'org.javatuples:javatuples:1.2'
+	fat 'ch.qos.logback:logback-classic:1.1.7'
 }
 
 tasks.withType(Test) {
-    systemProperty "java.library.path", "lib/x64/opencv_java320.dll"
+    systemProperty "java.library.path", "lib/x64/"
+}
+
+task fatJar(type:Jar, dependsOn: classes) {
+    classifier = 'fat'
+
+    from(file('src/main/resources/logback.xml'))
+    from(files(sourceSets.main.output.classesDir))
+    from(configurations.fat.collect { it.isDirectory() ? it : zipTree(it) }) {
+        exclude "META-INF/*.SF"
+        exclude "META-INF/*.DSA"
+        exclude "META-INF/*.RSA"
+    }
+
+    manifest {
+        attributes 'Implementation-Version': version,
+                'Built-By': System.getProperty('user.name'),
+                'Built-Date': new Date()
+    }
 }
 
 task javadocJar(type: Jar, dependsOn: check) {

@@ -123,10 +123,12 @@ Ran the first feature extraction pipeline!
 **Experiment 1**: `collinm.plankton.training.Experiment1.java`  
 Features:
 - histogram of pixel values (0-255)
-Results/Metrics:
+Results/Metrics (single run, random 80:20 split):
 - Precision = 0.2126
 - Recall = 0.2126
 - F1 = 0.2126
+
+NOTE: feature extraction pipelines must be run with `-Djava.library.path=lib/x64/` or some variation thereof pointing to the directory that holds the compiled OpenCV binary for the runtime platform. Excluding this argument will cause the job to fail!
 
 Questions:
 - How does Spark know which attribute of the Java class to predict? Is it as simple as the one named 'label'?
@@ -138,11 +140,47 @@ Questions:
 
 - Standard Spark way of measuring performance metrics is too strict, so I implemented my own: `collinm.plankton.testing.ConfusionMatrix`. It doesn't work with RDDs, but the performance data is small enought that it doesn't matter.
 - Refactored some IO code to make it more reusable, namely reading in the processed training data.
-- Added functionality to enable stratified sampling and thus cross validation
+- Added functionality to enable stratified sampling and thus cross validation.
+- Generalized Logistic Regression Runner so that input, output, and k values are *not* hard-coded. Now works properly with `spark-submit`
+- Added image size normalization functionality
 
 Continuation of experiment 1: 5-fold cross-validation of logistic regression with histogram features (see yesterday for feature details). (Full results)[results/experiment1.csv]
+- Average Precision = 0.1876
+- Average Recall = 0.2114
+- Average F1 = 0.1988
 
-Average Precision = 0.1876
-Average Recall = 0.2114
-Average F1 = 0.1988
+**Experiment 2**: `collinmc.plankton.training.Experiment2.java`  
+Features:
+- histogram of pixel values (0-255)
+- dimensions of image (height, width)
+Results of 5-fold logistic regression ((Full results)[results/experiment2.csv]):
+- Average Precision = 0.2620
+- Average Recall = 0.3055
+- Average F1 = 0.2821
+Comments: 5% increase on precision, 9% increase on recall, and 7% incraese on F1. Dimension of the image clearly carries a lot of signal.
 
+**Experiment 3**: `collinmc.plankton.training.Experiment3.java`  
+Features:
+- histogram of pixel values (0-255)
+- dimensions of image (height, width)
+- pixel count
+Results of 5-fold logistic regression ((Full results)[results/experiment3.csv]):
+- Average Precision = 0.2682
+- Average Recall = 0.3108
+- Average F1 = 0.2879
+Comments: 1% increase on recall, but otherwise negligible improvements. Pixel count probably provides much of the same signal as the dimensions features; however, the small performance increase might be due to generalizing/decoupling absolute size from explicit image ratio as encoded by image dimensions. I'll keep the feature for now, as it doesn't seem to be noisy and it helps with recall a little. It's also worth noting that in terms of objective value pixel count is waaaay bigger than the others. Will this cause scaling problems? Should I be normalizing feature values?
+
+**Experiment 4**: `collinmc.plankton.training.Experiment4.java`  
+Features:
+- dimensions of image (height, width)
+- pixel count
+- Normalize image size to 128x128
+- histogram of pixel values (0-255)
+Results of 5-fold logistic regression ((Full results)[results/experiment4.csv]):
+- Average Precision = 0.3169
+- Average Recall = 0.3590
+- Average F1 = 0.3366
+Comments: ~5% increase on precision, ~5% increase on recall, and ~5% increase on F1! Normalizing the inputs would seem to help substantially. It's worth noting here that the normalization routine scales the image 1:1 up/down to the desired max edge length based on the longest dimension. After the scaling is done, the shorter dimension is padded with white pixels (255, 255, 255) to achieve a square image. I've explicitly avoided scaling each dimension at different rates as it seems like it would throw out signal, especially considering that the resulting image would have many more interpolated pixel values.
+
+Questions:
+- Is there any value in normalizing feature vector values? That is, are various algorithms sensitive to the absolute size of an individual feature?

@@ -1,5 +1,6 @@
 package collinm.plankton.testing;
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -21,16 +22,20 @@ public class LogisticRegressionRunner {
 	private static Logger logger = LoggerFactory.getLogger(LogisticRegressionRunner.class);
 
 	public static void main(String[] args) {
+		Path inputFile = Paths.get(args[0]);
+		Path outputFile = Paths.get(args[1]);
+		int k = Integer.parseInt(args[2]);
+		
 		// Setup Spark
-		SparkConf conf = new SparkConf().setAppName("LogisticRegression").setMaster("local[7]");
+		SparkConf conf = new SparkConf().setAppName("LogisticRegression");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		int k = 5;
 
+		// Setup metrics container
 		List<ConfusionMatrix> metrics = new ArrayList<>(k);
 
 		// Read data
 		logger.info("Reading in data");
-		List<JavaRDD<LabeledPoint>> samples = PlanktonUtil.readData(Paths.get("output/experiment1.json"), sc, k);
+		List<JavaRDD<LabeledPoint>> samples = PlanktonUtil.readData(inputFile, sc, k);
 
 		for (int split = 0; split < k; split++) {
 			logger.info("Starting batch [" + split + "]");
@@ -68,7 +73,7 @@ public class LogisticRegressionRunner {
 			logger.info("Batch [" + split + "]: F1 = " + cm.f1());
 		}
 		
-		PlanktonUtil.writeMetrics(Paths.get("doc/results/experiment1.csv"), metrics);
+		PlanktonUtil.writeMetrics(outputFile, metrics);
 
 		double precision = metrics.stream().mapToDouble(c -> c.precision() / k).reduce(Double::sum).getAsDouble();
 		double recall = metrics.stream().mapToDouble(c -> c.recall() / k).reduce(Double::sum).getAsDouble();
