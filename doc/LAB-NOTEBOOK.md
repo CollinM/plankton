@@ -159,6 +159,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment2.csv)):
 - Average Precision = 0.2620
 - Average Recall = 0.3055
 - Average F1 = 0.2821
+
 Comments: 5% increase on precision, 9% increase on recall, and 7% incraese on F1. Dimension of the image clearly carries a lot of signal.
 
 **Experiment 3**: `collinmc.plankton.training.Experiment3.java`  
@@ -171,6 +172,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment3.csv)):
 - Average Precision = 0.2682
 - Average Recall = 0.3108
 - Average F1 = 0.2879
+
 Comments: 1% increase on recall, but otherwise negligible improvements. Pixel count probably provides much of the same signal as the dimensions features; however, the small performance increase might be due to generalizing/decoupling absolute size from explicit image ratio as encoded by image dimensions. I'll keep the feature for now, as it doesn't seem to be noisy and it helps with recall a little. It's also worth noting that in terms of objective value pixel count is waaaay bigger than the others. Will this cause scaling problems? Should I be normalizing feature values?
 
 **Experiment 4**: `collinmc.plankton.training.Experiment4.java`  
@@ -184,6 +186,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment4.csv)):
 - Average Precision = 0.3169
 - Average Recall = 0.3590
 - Average F1 = 0.3366
+
 Comments: ~5% increase on precision, ~5% increase on recall, and ~5% increase on F1! Normalizing the inputs would seem to help substantially. It's worth noting here that the normalization routine scales the image 1:1 up/down to the desired max edge length based on the longest dimension. After the scaling is done, the shorter dimension is padded with white pixels (255, 255, 255) to achieve a square image. I've explicitly avoided scaling each dimension at different rates as it seems like it would throw out signal, especially considering that the resulting image would have many more interpolated pixel values.
 
 For the sake of convenience, here's the command for running cross-validated logistic regression from the command line (working directory = project directory): `spark-submit --class collinm.plankton.testing.LogisticRegressionRunner --master local[7] build\libs\plankton-0-fat.jar output\experiment<num>.json doc\results\experiment<num>.csv <num-folds>`
