@@ -123,6 +123,7 @@ Ran the first feature extraction pipeline!
 **Experiment 1**: `collinm.plankton.training.Experiment1.java`  
 Features:
 - histogram of pixel values (0-255)
+
 Results/Metrics (single run, random 80:20 split):
 - Precision = 0.2126
 - Recall = 0.2126
@@ -153,6 +154,7 @@ Continuation of experiment 1: 5-fold cross-validation of logistic regression wit
 Features:
 - histogram of pixel values (0-255)
 - dimensions of image (height, width)
+
 Results of 5-fold logistic regression ([Full results](results/experiment2.csv)):
 - Average Precision = 0.2620
 - Average Recall = 0.3055
@@ -164,6 +166,7 @@ Features:
 - histogram of pixel values (0-255)
 - dimensions of image (height, width)
 - pixel count
+
 Results of 5-fold logistic regression ([Full results](results/experiment3.csv)):
 - Average Precision = 0.2682
 - Average Recall = 0.3108
@@ -176,6 +179,7 @@ Features:
 - pixel count
 - Normalize image size to 128x128
 - histogram of pixel values (0-255)
+
 Results of 5-fold logistic regression ([Full results](results/experiment4.csv)):
 - Average Precision = 0.3169
 - Average Recall = 0.3590
