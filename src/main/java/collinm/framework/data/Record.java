@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 
 /**
  * General instance of data.
@@ -12,14 +13,17 @@ import java.util.Map;
  */
 public class Record {
 
-	private final static String ID_KEY = "ID";
+	public final static String ID_KEY = "ID";
 	private Map<String, Object> attributes;
 	private Map<String, Class<?>> attributeTypes;
 
-	public Record(String id) {
+	public Record() {
 		this.attributes = new HashMap<>();
 		this.attributeTypes = new HashMap<>();
-
+	}
+	
+	public Record(String id) {
+		this();
 		this.set(ID_KEY, id);
 	}
 
@@ -69,5 +73,12 @@ public class Record {
 	 */
 	public String id() {
 		return (String) this.attributes.get(ID_KEY);
+	}
+	
+	public Record copy(String suffix) {
+		Record copy = new Record(this.id() + suffix);
+		for (Entry<String, Object> pair : this.attributes.entrySet())
+			copy.set(pair.getKey(), pair.getValue());
+		return copy;
 	}
 }

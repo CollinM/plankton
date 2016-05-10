@@ -48,7 +48,7 @@ public class NormalizeImageSize extends Processor {
 			int diff = (int) (Math.round(this.targetDimension) - w);
 			int left = diff / 2;
 			int right = (int) (Math.round(this.targetDimension) - w - left);
-			Core.copyMakeBorder(img, img, 0, 0, left, right, Core.BORDER_CONSTANT, new Scalar(255));
+			Core.copyMakeBorder(img, img, 0, 0, left, right, Core.BORDER_CONSTANT, new Scalar(255, 255, 255));
 		} else {
 			// Resize to get width to desired size
 			double scale = this.targetDimension / w;
@@ -63,6 +63,4 @@ public class NormalizeImageSize extends Processor {
 		
 		r.set(PlanktonSource.IMAGE_KEY, img);
 	}
-
-	
 }

@@ -3,6 +3,7 @@ package collinm.plankton.testing;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import org.javatuples.Triplet;
@@ -116,15 +117,37 @@ public class ConfusionMatrix {
 	/**
 	 * @return <code>precision,recall,F1</code>
 	 */
-	public String toCSV() {
+	public String toMetricsCSV() {
 		return Joiner.on(",").join(this.precision(), this.recall(), this.f1());
 	}
 
-	public static String toCSV(List<ConfusionMatrix> cms) {
+	public static String toMetricsCSV(List<ConfusionMatrix> cms) {
 		StringBuilder sb = new StringBuilder();
 		sb.append(Joiner.on(",").join("Split #", "Precision", "Recall", "F1") + "\n");
 		for (int i = 0; i < cms.size(); i++)
-			sb.append(Joiner.on(",").join(i, cms.get(i).toCSV()) + "\n");
+			sb.append(Joiner.on(",").join(i, cms.get(i).toMetricsCSV()) + "\n");
 		return sb.toString();
+	}
+	
+	public String toCSV() {
+		StringBuilder out = new StringBuilder();
+		Joiner commaJoiner = Joiner.on(",");
+
+		// Writer header
+		out.append(",");
+		out.append(commaJoiner
+				.join(IntStream.range(0, this.numClasses)
+						.mapToObj(Integer::toString)
+						.collect(Collectors.toList())));
+		out.append("\n");
+
+		// Write each row class + data
+		for (int i = 0; i < this.numClasses; i++) {
+			out.append(Integer.toString(i) + ",");
+			out.append(commaJoiner.join(this.matrix.get(i)));
+			out.append("\n");
+		}
+
+		return out.toString();
 	}
 }

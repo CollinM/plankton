@@ -23,6 +23,7 @@ configurations {
 dependencies {
 	compile files('lib/opencv-310.jar')
 	// Utilities
+	compile 'com.esotericsoftware:kryo:3.0.3'
 	compile 'com.google.guava:guava:19.0'
 	compile 'org.javatuples:javatuples:1.2'
 	compile 'org.slf4j:slf4j-api:1.7.21'
@@ -38,7 +39,7 @@ dependencies {
 	  //exclude group: 'org.slf4j'
 	}
 
-	// Package in the fat jar so they're usable at runtime!
+	// Package in the fat jar so they're usable at runtime (in Spark)!
 	fat 'com.google.guava:guava:19.0'
 	fat 'org.javatuples:javatuples:1.2'
 	fat 'ch.qos.logback:logback-classic:1.1.7'

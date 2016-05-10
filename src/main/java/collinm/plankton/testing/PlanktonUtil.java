@@ -71,18 +71,33 @@ public class PlanktonUtil {
 		return readData(filePath, sc, 1).get(1);
 	}
 	
-	public static void writeMetrics(Path outputPath, List<ConfusionMatrix> matrices) {
+	public static void writeMetrics(Path outputDir, List<ConfusionMatrix> matrices) {
 		try {
-			if (!Files.exists(outputPath.getParent()))
-				Files.createDirectories(outputPath.getParent());
+			Files.createDirectories(outputDir);
 		} catch (IOException io) {
 			logger.error("Could not create output directory!", io);
 		}
 
-		try (BufferedWriter writer = Files.newBufferedWriter(outputPath)) {
-			writer.write(ConfusionMatrix.toCSV(matrices));
+		try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputDir.toString(), "metrics.csv"))) {
+			writer.write(ConfusionMatrix.toMetricsCSV(matrices));
 		} catch (IOException io) {
 			logger.error("Could not wite metrics out to file!", io);
+		}
+	}
+	
+	public static void writeMatrices(Path outputDir, List<ConfusionMatrix> matrices) {
+		try {
+			Files.createDirectories(outputDir);
+		} catch (IOException io) {
+			logger.error("Could not create output directory!", io);
+		}
+		
+		for (int i = 0; i < matrices.size(); i++) {
+			try (BufferedWriter writer = Files.newBufferedWriter(Paths.get(outputDir.toString(), "split" + i + ".csv"))) {
+				writer.write(matrices.get(i).toCSV());
+			} catch (IOException io) {
+				logger.error("Could not wite confusion matrix out to file!", io);
+			}
 		}
 	}
 }

@@ -23,7 +23,7 @@ public class LogisticRegressionRunner {
 
 	public static void main(String[] args) {
 		Path inputFile = Paths.get(args[0]);
-		Path outputFile = Paths.get(args[1]);
+		Path outputDir = Paths.get(args[1]);
 		int k = Integer.parseInt(args[2]);
 		
 		// Setup Spark
@@ -73,7 +73,8 @@ public class LogisticRegressionRunner {
 			logger.info("Batch [" + split + "]: F1 = " + cm.f1());
 		}
 		
-		PlanktonUtil.writeMetrics(outputFile, metrics);
+		PlanktonUtil.writeMetrics(outputDir, metrics);
+		PlanktonUtil.writeMatrices(outputDir, metrics);
 
 		double precision = metrics.stream().mapToDouble(c -> c.precision() / k).reduce(Double::sum).getAsDouble();
 		double recall = metrics.stream().mapToDouble(c -> c.recall() / k).reduce(Double::sum).getAsDouble();

@@ -16,8 +16,8 @@ public class Vector {
 
 	public final static double DEFAULT = 0;
 
-	public final int size;
-	public final Map<Integer, Double> v;
+	public int size;
+	public Map<Integer, Double> v;
 
 	/**
 	 * Create a new, empty <code>Vector</code>.

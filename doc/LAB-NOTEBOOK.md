@@ -121,6 +121,8 @@ Refactored the package structure of the project to give everything better logica
 Ran the first feature extraction pipeline!
 
 **Experiment 1**: `collinm.plankton.training.Experiment1.java`  
+Motivation/Hypothesis: Establish a baseline feature set and performance metrics.
+
 Features:
 - histogram of pixel values (0-255)
 
@@ -151,6 +153,8 @@ Continuation of experiment 1: 5-fold cross-validation of logistic regression wit
 - Average F1 = 0.1988
 
 **Experiment 2**: `collinmc.plankton.training.Experiment2.java`  
+Motivation/Hypothesis: Do the dimensions of the image carry any signal?
+
 Features:
 - histogram of pixel values (0-255)
 - dimensions of image (height, width)
@@ -163,6 +167,8 @@ Results of 5-fold logistic regression ([Full results](results/experiment2.csv)):
 Comments: 5% increase on precision, 9% increase on recall, and 7% incraese on F1. Dimension of the image clearly carries a lot of signal.
 
 **Experiment 3**: `collinmc.plankton.training.Experiment3.java`  
+Motivation/Hypothesis: Does pixel count carry any additional signal that dimensions does not?
+
 Features:
 - histogram of pixel values (0-255)
 - dimensions of image (height, width)
@@ -176,13 +182,15 @@ Results of 5-fold logistic regression ([Full results](results/experiment3.csv)):
 Comments: 1% increase on recall, but otherwise negligible improvements. Pixel count probably provides much of the same signal as the dimensions features; however, the small performance increase might be due to generalizing/decoupling absolute size from explicit image ratio as encoded by image dimensions. I'll keep the feature for now, as it doesn't seem to be noisy and it helps with recall a little. It's also worth noting that in terms of objective value pixel count is waaaay bigger than the others. Will this cause scaling problems? Should I be normalizing feature values?
 
 **Experiment 4**: `collinmc.plankton.training.Experiment4.java`  
+Motivation/Hypothesis: Will normalizing the image size (without skewing due to scaling) impact the signal contained in the histogram by controlling the total number of pixels?
+
 Features:
 - dimensions of image (height, width)
 - pixel count
-- Normalize image size to 128x128
+- normalize image size to 128x128
 - histogram of pixel values (0-255)
 
-Results of 5-fold logistic regression ([Full results](results/experiment4.csv)):
+Results of 5-fold logistic regression ([Full results](results/experiment4-lr/metrics.csv)):
 - Average Precision = 0.3169
 - Average Recall = 0.3590
 - Average F1 = 0.3366
@@ -193,3 +201,69 @@ For the sake of convenience, here's the command for running cross-validated logi
 
 Questions:
 - Is there any value in normalizing feature vector values? That is, are various algorithms sensitive to the absolute size of an individual feature?
+
+--------------------
+
+**5/9/2015**
+
+Added new feature: sub-region average. This feature scans through the image matrix with a custom size window (always square) taking the average of all the pixel values in each window and adding said values as a feature. The window scans in steps the size of the window, unless an overlap is specified then it steps in `window size - overlap`. This features seems like a relatively basic way to encode structural information about the image. Up to this point, none of the features have taken the positions of any pixels, even in aggregate, into account.
+
+Added new augmentation: flipping images horizontally and vertically. I wrote some code to create a copy of an image and flip it vertically (over the X axis) or horizontally (over the Y axis). Any instance of this object will only create one additional image (double the data), but chaining them together can allow us to compound the changes and data multiplication.
+
+**Experiment 5**: `collinmc.plankton.training.Experiment5.java`  
+Motivation/Hypothesis: Assuming that sub-region averages are providing the structural signal that I think they are, do they improve performance with logistic regression?
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+- sub-region averaging (8x8, 0 overlap)
+
+Results of 5-fold logistic regression ([Full results](results/experiment5-lr/metrics.csv)):
+- Average Precision = 0.2484
+- Average Recall = 0.3205
+- Average F1 = 0.2798
+
+Comments: Overall, performance decreased 3-6% across all of the metrics. Taking a look at the confusion matrices, the models seem to be overfitting on 7 of the 121 classes:
+- acantharia_protist (index=2)
+- chaetognath_other (index=11)
+- copepod_cyclopoid_oithona_eggs (index=24)
+- protist_other (index=85)
+- trichodesmium_bowtie (index=108)
+- trichodesmium_multiple (index=109)
+- trichodesmium_puff (index=110)
+
+Comparing the confusion matrices for this experiment to those of experiment 4, this experiment's are much more concentrated on the above 7 classes to the exclusion of most other classes.
+
+The addition of the sub-region average features roughlty tripled the size of the training data. While in and of itself this is probably not a problem, I *suspect* that the structural nature of the sub-region features made it such that there is no longer a single, linear decision boundary; thus, logistic regression is having a hard time making good decisions. I think I'll need to try a non-linear model next, possibly random forests...
+
+The parameters for the sub-regions could be non-optimal as well. I'll need to test different values for window size and overlap to see if it makes any difference. Decreasing window size and/or increasing overlap will have a respectable impact on the number of features though.
+
+Lastly, the structural features might just be under-represented due to the greater variation that's possible in a two-dimensional image. Data augmentation might be able to help here.
+
+**Experiment 6**: `collinmc.plankton.training.Experiment6.java`  
+Motivation/Hypothesis: Will data augmentation help structural features elucidate better signal?
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+- augment data by flipping image vertically (2x data)
+- augment data by flipping image horizontally (2x data)
+- sub-region averaging (8x8, 0 overlap)
+
+Results of 5-fold logistic regression ([Full results](results/experiment6-lr/metrics.csv)):
+- Average Precision = 0.2349
+- Average Recall = 0.3146
+- Average F1 = 0.2690
+
+Comments: Data augmentation made all of the metrics worse by ~1%. Looking at the confusion matrices, the diagonal still looks clumpy, but less so than experiment 5. The predictions are more evenly spread across the classes instead of being concentrated on just 7 of them. So, the predictions are mostly still wrong, but at least there's less overfitting.
+
+The data augmentation grew the training data 4x, but delivered no improvement. If anything, it resulted in a nominal *decrease* in performance. Perhaps my assumptions about what makes a good data augmentation strategy are faulty, in which case the extra data would only introduce noise. I'll need to validate if mirroring is acceptable or if I should replace and/or complement it with rotations...
+
+The parameters for the sub-regions could still be non-optimal as well. See above.
+
+On a technical note, the size of the data was causing the driver to run into memory/garbage collector problems, so I had to increase the memory allocated to the driver. The new command to run it is as follows: `spark-submit --class collinm.plankton.testing.LogisticRegressionRunner --master local[7] build\libs\plankton-0-fat.jar output\experiment6.json doc\results\experiment6-lr 5`
+
