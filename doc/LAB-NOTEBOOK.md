@@ -259,11 +259,36 @@ Results of 5-fold logistic regression ([Full results](results/experiment6-lr/met
 - Average Recall = 0.3146
 - Average F1 = 0.2690
 
-Comments: Data augmentation made all of the metrics worse by ~1%. Looking at the confusion matrices, the diagonal still looks clumpy, but less so than experiment 5. The predictions are more evenly spread across the classes instead of being concentrated on just 7 of them. So, the predictions are mostly still wrong, but at least there's less overfitting.
+Comments: Data augmentation made all of the metrics worse by ~1%. Looking at the confusion matrices, the diagonal still looks clumpy, but less so than experiment 5. The predictions are more evenly spread across the classes instead of being concentrated on just 7 of them. So, the predictions are mostly still wrong, but at least there's less overfitting. The augmented data probably has something to do with this subjective improvement.
 
-The data augmentation grew the training data 4x, but delivered no improvement. If anything, it resulted in a nominal *decrease* in performance. Perhaps my assumptions about what makes a good data augmentation strategy are faulty, in which case the extra data would only introduce noise. I'll need to validate if mirroring is acceptable or if I should replace and/or complement it with rotations...
+The data augmentation grew the training data 4x, but delivered no measurable improvement. If anything, it resulted in a nominal *decrease* in performance. Perhaps my assumptions about what makes a good data augmentation strategy are faulty, in which case the extra data would only introduce noise. I should validate if mirroring is acceptable or if I should replace and/or complement it with rotations...
 
 The parameters for the sub-regions could still be non-optimal as well. See above.
 
-On a technical note, the size of the data was causing the driver to run into memory/garbage collector problems, so I had to increase the memory allocated to the driver. The new command to run it is as follows: `spark-submit --class collinm.plankton.testing.LogisticRegressionRunner --master local[7] build\libs\plankton-0-fat.jar output\experiment6.json doc\results\experiment6-lr 5`
+On a technical note, the size of the data was causing the driver to run into memory/garbage collector problems, so I had to increase the memory allocated to the driver. The new command to run it is as follows: `spark-submit --class collinm.plankton.testing.LogisticRegressionRunner --driver-memory 4g --master local[7] build\libs\plankton-0-fat.jar output\experiment6.json doc\results\experiment6-lr 5`
 
+--------------------
+
+**5/10/2015**
+
+Setup Spark's random forest implementation in my process today; however, it will not run to completion. Using the trainng data from experiment 6, I am unable to even train a full forest. With any number of trees greater than 20, the job will throw an `OutOfMemoryError` citing java heap space and exit. With fewer trees than that, it will run for hours and show no progress. I tried again to run a job on the CMU Spark cluster, but it's still refusing my jobs. This bloated memory profile is apparently a known problem as there's a ticket to slim down the memory usage in the Spark issue tracker.
+
+Since random forests weren't playing nice, I thought I might as well try out the next item in Spark's toolkit: multilayer perceptrons. I wrapped up this code and fed it the training data from experiment 6. It's running as I types this... should take ~3 hours (~40 mins per fold, 5 folds).
+
+So far, logistic regression has been the only thing that's tractable to iterate on quickly, but the model cannot accomodate non-linear decision boundaries. However, it's weakness here might be greatly compounded by the 121 boundaries that it has to cram into one model. I think it would be worth trying one random split of a one-vs-rest logistic regression model to see if posing the multi-class problem as 121 binary problems makes those features more usable. A quick literature search seems to support the hypothesis of OVR being better than multiclass when there are a lot of classes. Of course, it could be the case that the sub-region averages are just bad features, but that doesn't seem proven yet.
+
+Future...
+
+**Experiment 7**: `collinmc.plankton.training.Experiment7.java`  
+Motivation/Hypothesis: will increasing the overlap parameter of the sub-region average feature increase the signal available to the model?
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+- augment data by flipping image vertically (2x data)
+- augment data by flipping image horizontally (2x data)
+- sub-region averaging (8x8, 3 overlap)
+
+Data has been generated, but no model has been trained yet...
