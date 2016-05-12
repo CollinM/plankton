@@ -3,7 +3,7 @@ apply plugin: 'eclipse'
 apply plugin: 'maven'
 
 group = 'collinm'
-version = '1'
+version = '2'
 
 eclipse.classpath.downloadJavadoc = true
 

@@ -93,10 +93,12 @@ public class MlpRunner {
 			logger.info("Batch [" + split + "]: Precision = " + cm.precision());
 			logger.info("Batch [" + split + "]: Recall = " + cm.recall());
 			logger.info("Batch [" + split + "]: F1 = " + cm.f1());
+			
+			PlanktonUtil.writeConfusionMatrix(outputDir, cm, "split" + split + ".csv");
+			// Will write multiple times, don't care, good for intermediate results
+			// See LogisticRegressionRunner
+			PlanktonUtil.writeMetrics(outputDir, metrics);
 		}
-		
-		PlanktonUtil.writeMetrics(outputDir, metrics);
-		PlanktonUtil.writeMatrices(outputDir, metrics);
 
 		double precision = metrics.stream().mapToDouble(c -> c.precision() / k).reduce(Double::sum).getAsDouble();
 		double recall = metrics.stream().mapToDouble(c -> c.recall() / k).reduce(Double::sum).getAsDouble();
@@ -106,7 +108,6 @@ public class MlpRunner {
 		logger.info("Average F1 = " + f1);
 
 		sc.close();
-		
 	}
 
 }

@@ -120,7 +120,7 @@ Refactored the package structure of the project to give everything better logica
 
 Ran the first feature extraction pipeline!
 
-**Experiment 1**: `collinm.plankton.training.Experiment1.java`  
+**Experiment 1 - Logistic Regression**: `collinm.plankton.training.Experiment1.java`  
 Motivation/Hypothesis: Establish a baseline feature set and performance metrics.
 
 Features:
@@ -152,7 +152,7 @@ Continuation of experiment 1: 5-fold cross-validation of logistic regression wit
 - Average Recall = 0.2114
 - Average F1 = 0.1988
 
-**Experiment 2**: `collinmc.plankton.training.Experiment2.java`  
+**Experiment 2 - Logistic Regression**: `collinmc.plankton.training.Experiment2.java`  
 Motivation/Hypothesis: Do the dimensions of the image carry any signal?
 
 Features:
@@ -166,7 +166,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment2.csv)):
 
 Comments: 5% increase on precision, 9% increase on recall, and 7% incraese on F1. Dimension of the image clearly carries a lot of signal.
 
-**Experiment 3**: `collinmc.plankton.training.Experiment3.java`  
+**Experiment 3 - Logistic Regression**: `collinmc.plankton.training.Experiment3.java`  
 Motivation/Hypothesis: Does pixel count carry any additional signal that dimensions does not?
 
 Features:
@@ -181,7 +181,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment3.csv)):
 
 Comments: 1% increase on recall, but otherwise negligible improvements. Pixel count probably provides much of the same signal as the dimensions features; however, the small performance increase might be due to generalizing/decoupling absolute size from explicit image ratio as encoded by image dimensions. I'll keep the feature for now, as it doesn't seem to be noisy and it helps with recall a little. It's also worth noting that in terms of objective value pixel count is waaaay bigger than the others. Will this cause scaling problems? Should I be normalizing feature values?
 
-**Experiment 4**: `collinmc.plankton.training.Experiment4.java`  
+**Experiment 4 - Logistic Regression**: `collinmc.plankton.training.Experiment4.java`  
 Motivation/Hypothesis: Will normalizing the image size (without skewing due to scaling) impact the signal contained in the histogram by controlling the total number of pixels?
 
 Features:
@@ -190,7 +190,7 @@ Features:
 - normalize image size to 128x128
 - histogram of pixel values (0-255)
 
-Results of 5-fold logistic regression ([Full results](results/experiment4-lr/metrics.csv)):
+Results of 5-fold logistic regression ([Full results](results/experiment4.csv)):
 - Average Precision = 0.3169
 - Average Recall = 0.3590
 - Average F1 = 0.3366
@@ -210,7 +210,7 @@ Added new feature: sub-region average. This feature scans through the image matr
 
 Added new augmentation: flipping images horizontally and vertically. I wrote some code to create a copy of an image and flip it vertically (over the X axis) or horizontally (over the Y axis). Any instance of this object will only create one additional image (double the data), but chaining them together can allow us to compound the changes and data multiplication.
 
-**Experiment 5**: `collinmc.plankton.training.Experiment5.java`  
+**Experiment 5 - Logistic Regression**: `collinmc.plankton.training.Experiment5.java`  
 Motivation/Hypothesis: Assuming that sub-region averages are providing the structural signal that I think they are, do they improve performance with logistic regression?
 
 Features:
@@ -273,14 +273,46 @@ On a technical note, the size of the data was causing the driver to run into mem
 
 Setup Spark's random forest implementation in my process today; however, it will not run to completion. Using the trainng data from experiment 6, I am unable to even train a full forest. With any number of trees greater than 20, the job will throw an `OutOfMemoryError` citing java heap space and exit. With fewer trees than that, it will run for hours and show no progress. I tried again to run a job on the CMU Spark cluster, but it's still refusing my jobs. This bloated memory profile is apparently a known problem as there's a ticket to slim down the memory usage in the Spark issue tracker.
 
-Since random forests weren't playing nice, I thought I might as well try out the next item in Spark's toolkit: multilayer perceptrons. I wrapped up this code and fed it the training data from experiment 6. It's running as I types this... should take ~3 hours (~40 mins per fold, 5 folds).
+Since random forests weren't playing nice, I thought I might as well try out the next item in Spark's toolkit: multilayer perceptrons. I wrapped up this code and fed it the training data from experiment 6. It's running as I types this... should take ~3 hours (~40 mins per fold, 5 folds). Update: it took over 12 hours and the performance was terrible, see 5/11/2015.
 
 So far, logistic regression has been the only thing that's tractable to iterate on quickly, but the model cannot accomodate non-linear decision boundaries. However, it's weakness here might be greatly compounded by the 121 boundaries that it has to cram into one model. I think it would be worth trying one random split of a one-vs-rest logistic regression model to see if posing the multi-class problem as 121 binary problems makes those features more usable. A quick literature search seems to support the hypothesis of OVR being better than multiclass when there are a lot of classes. Of course, it could be the case that the sub-region averages are just bad features, but that doesn't seem proven yet.
 
-Future...
+--------------------
 
-**Experiment 7**: `collinmc.plankton.training.Experiment7.java`  
+**5/11/2015**
+
+Created binning image histogram feature. The function of this processor is two fold: (1) it divides the space of pixel intensities into `n` bins depending on the specified bin size and uses those bins for its histogram, and (2) allows the user to set lower and upper cutoffs for pixel intensity values so that we can potentially ignore too high or too low values. The idea is to clean the signal aggregating together similar pixel values and excluding values that are not informative (i.e., white pixels = 255). This theory is partially informed by a [histogram of pixel values](imgs/pixel-intensity-hist-all.png) from all of the training data ([raw data](imgs/pixel-intensity-values.csv)). This specific histogram is limited at pixel intensity = 250 so that we can actually see the values lower than that. The amount of pixels with values >250 ranges from twice as many to two orders of magnitude greater. Surely this enormous concentration of pixels, which are effectively padding for the interesting part of the image, cannot be relevant? See the following experiments for results (spoiler: they are relevant).
+
+**Experiment 6 - Multilayer Perceptron**  
+Motivation/Hypothesis: Train a model capable of capturing non-linear relationships from the data.
+
+Features: Same as experiment 6 above
+
+Results of 5-fold multilayer perceptron ([Full results](results/experiment6-mlp/metrics.csv)):
+- Average Precision = 0.0407
+- Average Recall = 0.1432
+- Average F1 = 0.0622
+
+Comments: Really bad performance and took a long time to train. In hindsight, I just eyeballed the structure of the layers thinking that it would produce some kind of output of value, but that was not the case. The structure was [515, 500, 250, 121]. Epoch size was 256 which was perhaps too big...?
+
+Looking at the confusion matrices, each model "chose" about 4-5 classes and would classify each record as one of those. The set of classes covered by all of the models was:
+- acantharia_protist (2)
+- chaetognath_non_sagitta (10)
+- chaetognath_other (11)
+- copepod_cyclopoid_oithona_eggs (24)
+- diatom_chain_string (36)
+- hydromedusae_shapeA (69)
+- hydromedusae_solmaris (72)
+- protist_other (85)
+- trichodesmium_bowtie (108)
+- trichodesmium_puff (110)
+
+Scrolling through the images, I think that the histogram, shape, and size features contributed the most to the preference for these classes. Each one looks to have some combination of fairly distinct and consistent histogram, image shape, and image size. I think my sub-region averaging feature is a bust.
+
+**Experiment 7 - Logistic Regression**: `collinm.plankton.training.Experiment7.java`  
 Motivation/Hypothesis: will increasing the overlap parameter of the sub-region average feature increase the signal available to the model?
+
+Note: I began running this experiment on the spark cluster before experiment 6 with the perceptron had finished.
 
 Features:
 - dimensions of image (height, width)
@@ -291,4 +323,69 @@ Features:
 - augment data by flipping image horizontally (2x data)
 - sub-region averaging (8x8, 3 overlap)
 
-Data has been generated, but no model has been trained yet...
+Results of 5-fold logistic regression ([Full results](results/experiment7-lr/metrics.csv)):
+- Average Precision = 0.2193
+- Average Recall = 0.2878
+- Average F1 = 0.2488
+
+Comments: These results are best compared with experiment 6 from 5/9/2015. In every metric, these results are ~3% worse. This is not surprising given what I know now from the other experiments. The only thing left to try in regards to this feature would be a much smaller window size with no overlap, but that will create a ton of features.
+
+**Experiment 4 - OVR Logistic Regression**  
+Motivation/Hypothesis: Since my more advanced features have not been performing well, I'm returning to my most successful feature set and applying a different model, namely one vs rest logistic regression (instead of multi-class logistic regression).
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+
+Results of 5-fold OVR logistic regression ([Full results](results/experiment4-ovrlr/metrics.csv)):
+- Average Precision = TODO
+- Average Recall = TODO
+- Average F1 = TODO
+
+**Experiment 8 - Logistic Regression**: `collinm.plankton.training.Experiment8.java`  
+Motivation/Hypothesis: In the same theme of getting back to basics, I created another feature that bins the histogram and allows you to create a high and low cutoff for pixel values. The idea is that this should remove some noise from the histogram (enormous amounts of white pixels) *and* make the models faster to train. However, I am running the risk of removing signal in the process of binning the pixel values.
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- binned histogram of pixel values (bin size=5, range=0-250)
+
+Results of 5-fold logistic regression ([Full results](results/experiment8-lr/metrics.csv)):
+- Average Precision = 0.2731
+- Average Recall = 0.3199
+- Average F1 = 0.2946
+
+Comments: Comparing directly against experiment 4 with logistic regression (prec=0.3169, rec=0.3590, f1=0.3366), these results are uniformly worse by ~4%. My hypothesis was that binning would make the signal cleaner by aggreagting similar pixel values, but instead that aggregation has removed important signal. I'd like to do another iteration of this experiment where the cutoffs are not used and only the binning is performed. This should help to elucidate the signal of all those white or very near white pixels.
+
+**Experiment 8_1 - Logistic Regression**: `collinm.plankton.training.Experiment8_1.java`  
+Motivation/Hypothesis: This experiment is conceptually similar to experiment 8 except that the pixel intensity cutoffs of the binning histogram will not be used. This should help to measure the signal from the white or very near white pixels.
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- binned histogram of pixel values (bin size=5, range=0-256)
+
+Results of 5-fold logistic regression ([Full results](results/experiment8_1-lr/metrics.csv)):
+- Average Precision = 0.2927
+- Average Recall = 0.3364
+- Average F1 = 0.3130
+
+Comments: Results are ~2% better across all metrics, indiacting that the very high value pixels carry non-trivial signal. Do not throw those away! It also confirms that binning is throwing away signal, as these results are still ~2% worse than the normal histogram.
+
+**Experiment 4 - Logistic Regression (v2)**: `collinm.plankton.training.Experiment4.java`  
+Motivation/Hypothesis: I'm re-running this experiment in order to generate confusion matrices to compare against other experiments.
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+
+Results of 5-fold logistic regression ([Full results](results/experiment4-lr/metrics.csv)):
+- Average Precision = 0.3169
+- Average Recall = 0.3590
+- Average F1 = 0.3366
+
+Comments: As expected, results are exactly the same.

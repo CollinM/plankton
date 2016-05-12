@@ -8,18 +8,25 @@ import java.util.List;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.mllib.classification.LogisticRegressionModel;
-import org.apache.spark.mllib.classification.LogisticRegressionWithLBFGS;
+import org.apache.spark.ml.classification.LogisticRegression;
+import org.apache.spark.ml.classification.OneVsRest;
+import org.apache.spark.ml.classification.OneVsRestModel;
 import org.apache.spark.mllib.regression.LabeledPoint;
+import org.apache.spark.sql.DataFrame;
+import org.apache.spark.sql.Row;
+import org.apache.spark.sql.SQLContext;
 import org.javatuples.Triplet;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import collinm.framework.data.LabeledPointWithId;
-
-public class LogisticRegressionRunner {
-
-	private static Logger logger = LoggerFactory.getLogger(LogisticRegressionRunner.class);
+/**
+ * One vs rest Logistic Regression Runner.
+ * 
+ * @author Collin McCormack
+ */
+public class OVRLogRegRunner {
+	
+	private static Logger logger = LoggerFactory.getLogger(OVRLogRegRunner.class);
 
 	public static void main(String[] args) {
 		Path inputFile = Paths.get(args[0]);
@@ -27,8 +34,9 @@ public class LogisticRegressionRunner {
 		int k = Integer.parseInt(args[2]);
 		
 		// Setup Spark
-		SparkConf conf = new SparkConf().setAppName("LogisticRegression");
+		SparkConf conf = new SparkConf().setAppName("OVRLogisticRegression");
 		JavaSparkContext sc = new JavaSparkContext(conf);
+		SQLContext sql = new SQLContext(sc);
 
 		// Setup metrics container
 		List<ConfusionMatrix> metrics = new ArrayList<>(k);
@@ -48,21 +56,28 @@ public class LogisticRegressionRunner {
 				else
 					test = samples.get(i);
 			}
-			train.cache();
+			// Convert to DataFrame
+			DataFrame trainDF = sql.createDataFrame(train, LabeledPoint.class);
+			DataFrame testDF = sql.createDataFrame(test, LabeledPoint.class);
+			trainDF.cache();
 
 			logger.info("Training model");
-			LogisticRegressionModel model = new LogisticRegressionWithLBFGS().setNumClasses(121).run(train.rdd());
+			LogisticRegression lr = new LogisticRegression();
+			OneVsRest ovr = new OneVsRest().setClassifier(lr);
+			OneVsRestModel ovrModel = ovr.fit(trainDF);
 			logger.info("Done");
 
 			train.unpersist();
 
 			logger.info("Evaluating performance");
-			List<Triplet<String, Double, Double>> idLabelPredictions = test.map(
-					p -> {
-						Double prediction = model.predict(p.features());
-						String id = ((LabeledPointWithId) p).getId();
-						return Triplet.with(id, p.label(), prediction);
-					}).collect();
+			DataFrame results = ovrModel.transform(testDF);
+			DataFrame evalPairs = results.select("prediction", "label");
+			
+			List<Triplet<String, Double, Double>> idLabelPredictions = evalPairs.toJavaRDD().map((Row row) -> {
+				Double prediction = (Double) row.get(0);
+				Double actual = (Double) row.get(1);
+				return Triplet.with("", actual, prediction);
+			}).collect();
 			
 			ConfusionMatrix cm = new ConfusionMatrix(121);
 			metrics.add(cm);
