@@ -340,9 +340,11 @@ Features:
 - histogram of pixel values (0-255)
 
 Results of 5-fold OVR logistic regression ([Full results](results/experiment4-ovrlr/metrics.csv)):
-- Average Precision = TODO
-- Average Recall = TODO
-- Average F1 = TODO
+- Average Precision = 0.2409
+- Average Recall = 0.2786
+- Average F1 = 0.2584
+
+Comments: This experiment was stopped after only one fold as the performance was already far below many other experiments. This poor performance is a surprising result. I was expecting that the ensemble of 121 models would out-perform the single multi-class model by at least a little. My hypothesis as for why it hasn't is that many of the classes are very similar or somewhat derivative, e.g. classes that specify the original creature plus eggs or a specialized sort of antennae. In these cases, one of the models is consistently monopolizing the probability rank due to over-confidence or relative over-representation in the training data. Similarly, these very confident models are scooping up other classes that have very few examples in the data and giving higher probabilities to their classifications than is probably warranted. I may be able to correct this by only applying data augmentation techniques to the under-represented classes, maybe the bottom 50%?
 
 **Experiment 8 - Logistic Regression**: `collinm.plankton.training.Experiment8.java`  
 Motivation/Hypothesis: In the same theme of getting back to basics, I created another feature that bins the histogram and allows you to create a high and low cutoff for pixel values. The idea is that this should remove some noise from the histogram (enormous amounts of white pixels) *and* make the models faster to train. However, I am running the risk of removing signal in the process of binning the pixel values.
@@ -389,3 +391,6 @@ Results of 5-fold logistic regression ([Full results](results/experiment4-lr/met
 - Average F1 = 0.3366
 
 Comments: As expected, results are exactly the same.
+
+Questions:
+- Running spark jobs with YARN seems to incur disk serialization at every step which massively slows down the job, how do we run jobs on pure spark using the CMU cluster?
