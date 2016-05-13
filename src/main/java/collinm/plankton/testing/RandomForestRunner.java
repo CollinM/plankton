@@ -19,16 +19,21 @@ import org.slf4j.LoggerFactory;
 import collinm.framework.data.LabeledPointWithId;
 
 public class RandomForestRunner {
-	
+
 	private static Logger logger = LoggerFactory.getLogger(RandomForestRunner.class);
 
+	/**
+	 * 
+	 * @param args
+	 *            <code>input-file output-directory num-trees max-depth k-folds</code>
+	 */
 	public static void main(String[] args) {
 		Path inputFile = Paths.get(args[0]);
 		Path outputDir = Paths.get(args[1]);
 		int trees = Integer.parseInt(args[2]);
 		int depth = Integer.parseInt(args[3]);
 		int k = Integer.parseInt(args[4]);
-		
+
 		// Setup Spark
 		SparkConf conf = new SparkConf().setAppName("RandomForest");
 		JavaSparkContext sc = new JavaSparkContext(conf);
@@ -39,7 +44,7 @@ public class RandomForestRunner {
 		// Read data
 		logger.info("Reading in data");
 		List<JavaRDD<LabeledPoint>> samples = PlanktonUtil.readData(inputFile, sc, k);
-		
+
 		for (int split = 0; split < k; split++) {
 			logger.info("Starting batch [" + split + "]");
 
@@ -55,7 +60,7 @@ public class RandomForestRunner {
 			train.cache();
 
 			// Set parameters
-			int numClasses= 121;
+			int numClasses = 121;
 			HashMap<Integer, Integer> categoricalFeaturesInfo = new HashMap<Integer, Integer>();
 			Integer numTrees = trees;
 			String featureSubsetStrategy = "auto";
@@ -63,33 +68,32 @@ public class RandomForestRunner {
 			Integer maxDepth = depth;
 			Integer maxBins = 128;
 			Integer seed = 42;
-			
+
 			logger.info("Training model");
-			RandomForestModel model = RandomForest.trainClassifier(train, numClasses,
-					categoricalFeaturesInfo, numTrees, featureSubsetStrategy, impurity,
-					maxDepth, maxBins, seed);
+			RandomForestModel model = RandomForest.trainClassifier(train, numClasses, categoricalFeaturesInfo, numTrees,
+					featureSubsetStrategy, impurity, maxDepth, maxBins, seed);
 			logger.info("Done");
 
 			train.unpersist();
 
 			logger.info("Evaluating performance");
-			List<Triplet<String, Double, Double>> idLabelPredictions = test.map(
-					p -> {
-						Double prediction = model.predict(p.features());
-						String id = ((LabeledPointWithId) p).getId();
-						return Triplet.with(id, p.label(), prediction);
-					}).collect();
-			
+			List<Triplet<String, Double, Double>> idLabelPredictions = test.map(p -> {
+				Double prediction = model.predict(p.features());
+				String id = ((LabeledPointWithId) p).getId();
+				return Triplet.with(id, p.label(), prediction);
+			}).collect();
+
 			ConfusionMatrix cm = new ConfusionMatrix(121);
 			metrics.add(cm);
 			cm.measure(idLabelPredictions);
-			
+
 			logger.info("Batch [" + split + "]: Precision = " + cm.precision());
 			logger.info("Batch [" + split + "]: Recall = " + cm.recall());
 			logger.info("Batch [" + split + "]: F1 = " + cm.f1());
-			
+
 			PlanktonUtil.writeConfusionMatrix(outputDir, cm, "split" + split + ".csv");
-			// Will write multiple times, don't care, good for intermediate results
+			// Will write multiple times, don't care, good for intermediate
+			// results
 			// See LogisticRegressionRunner
 			PlanktonUtil.writeMetrics(outputDir, metrics);
 		}

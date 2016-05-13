@@ -267,6 +267,8 @@ The parameters for the sub-regions could still be non-optimal as well. See above
 
 On a technical note, the size of the data was causing the driver to run into memory/garbage collector problems, so I had to increase the memory allocated to the driver. The new command to run it is as follows: `spark-submit --class collinm.plankton.testing.LogisticRegressionRunner --driver-memory 4g --master local[7] build\libs\plankton-0-fat.jar output\experiment6.json doc\results\experiment6-lr 5`
 
+FOLLOW-UP NOTE: adding `--conf 'spark.executor.memory=4g'` is also helpful in avoiding heap space problems when running on a machine that has enough room for large executor JVMs.
+
 --------------------
 
 **5/10/2015**

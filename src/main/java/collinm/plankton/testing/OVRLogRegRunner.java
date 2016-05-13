@@ -28,6 +28,11 @@ public class OVRLogRegRunner {
 	
 	private static Logger logger = LoggerFactory.getLogger(OVRLogRegRunner.class);
 
+	/**
+	 * 
+	 * @param args
+	 *            <code>input-file output-directory k-folds</code>
+	 */
 	public static void main(String[] args) {
 		Path inputFile = Paths.get(args[0]);
 		Path outputDir = Paths.get(args[1]);

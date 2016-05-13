@@ -21,6 +21,11 @@ public class LogisticRegressionRunner {
 
 	private static Logger logger = LoggerFactory.getLogger(LogisticRegressionRunner.class);
 
+	/**
+	 * 
+	 * @param args
+	 *            <code>input-file output-directory k-folds</code>
+	 */
 	public static void main(String[] args) {
 		Path inputFile = Paths.get(args[0]);
 		Path outputDir = Paths.get(args[1]);
