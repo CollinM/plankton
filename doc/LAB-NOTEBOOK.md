@@ -7,7 +7,7 @@
 
 # Lab Notebook
 
-**4/25/2015**
+**4/25/2016**
 
 Investigated data: [data about data](metadata.md)
 
@@ -19,7 +19,7 @@ Many classes seem under-represented. Of the 121 classes, half of them have <115 
 
 --------------------
 
-**4/26/2015**
+**4/26/2016**
 
 Feature Ideas:
 - Histogram of pixel values
@@ -41,7 +41,7 @@ Next steps are to get an end-to-end pipeline working., even if it's just assigni
 
 --------------------
 
-**5/2/2015**
+**5/2/2016**
 
 Feature Ideas:
 - Original dimensions of the image
@@ -59,7 +59,7 @@ Questions for Ravi:
 
 --------------------
 
-**5/3/2015**
+**5/3/2016**
 
 From the call today:
 - Spark ml vs mllib
@@ -80,13 +80,13 @@ From the call today:
 
 --------------------
 
-**5/5/2015**
+**5/5/2016**
 
 Removing Spark-related feature extraction code and transitioning prototyped pipeline framework into something more usable (and using Java 8 Streams!). Reintegrating OpenCV (java wrapper). Creating fundamental data structures needed to store features.
 
 --------------------
 
-**5/6/2015**
+**5/6/2016**
 
 Finished design and majority of implementation of feature extraction pipeline framework.
 
@@ -105,7 +105,7 @@ Added a JSON DataSink (output) so that I can finally train and evaluate somethin
 
 --------------------
 
-**5/7/2015**
+**5/7/2016**
 
 - Serialization and deserialization with JSON are working smoothly (Record object -> JSON -> LabeledPoint). This should be the last functional item required before running a feature extraction pipeline.
 - Removed all `println`'s and replaced them with proper logging (SLF4J + logback).
@@ -139,7 +139,7 @@ Questions:
 
 --------------------
 
-**5/8/2015**
+**5/8/2016**
 
 - Standard Spark way of measuring performance metrics is too strict, so I implemented my own: `collinm.plankton.testing.ConfusionMatrix`. It doesn't work with RDDs, but the performance data is small enought that it doesn't matter.
 - Refactored some IO code to make it more reusable, namely reading in the processed training data.
@@ -204,7 +204,7 @@ Questions:
 
 --------------------
 
-**5/9/2015**
+**5/9/2016**
 
 Added new feature: sub-region average. This feature scans through the image matrix with a custom size window (always square) taking the average of all the pixel values in each window and adding said values as a feature. The window scans in steps the size of the window, unless an overlap is specified then it steps in `window size - overlap`. This features seems like a relatively basic way to encode structural information about the image. Up to this point, none of the features have taken the positions of any pixels, even in aggregate, into account.
 
@@ -271,17 +271,17 @@ FOLLOW-UP NOTE: adding `--conf 'spark.executor.memory=4g'` is also helpful in av
 
 --------------------
 
-**5/10/2015**
+**5/10/2016**
 
 Setup Spark's random forest implementation in my process today; however, it will not run to completion. Using the trainng data from experiment 6, I am unable to even train a full forest. With any number of trees greater than 20, the job will throw an `OutOfMemoryError` citing java heap space and exit. With fewer trees than that, it will run for hours and show no progress. I tried again to run a job on the CMU Spark cluster, but it's still refusing my jobs. This bloated memory profile is apparently a known problem as there's a ticket to slim down the memory usage in the Spark issue tracker.
 
-Since random forests weren't playing nice, I thought I might as well try out the next item in Spark's toolkit: multilayer perceptrons. I wrapped up this code and fed it the training data from experiment 6. It's running as I types this... should take ~3 hours (~40 mins per fold, 5 folds). Update: it took over 12 hours and the performance was terrible, see 5/11/2015.
+Since random forests weren't playing nice, I thought I might as well try out the next item in Spark's toolkit: multilayer perceptrons. I wrapped up this code and fed it the training data from experiment 6. It's running as I types this... should take ~3 hours (~40 mins per fold, 5 folds). Update: it took over 12 hours and the performance was terrible, see 5/11/2016.
 
 So far, logistic regression has been the only thing that's tractable to iterate on quickly, but the model cannot accomodate non-linear decision boundaries. However, it's weakness here might be greatly compounded by the 121 boundaries that it has to cram into one model. I think it would be worth trying one random split of a one-vs-rest logistic regression model to see if posing the multi-class problem as 121 binary problems makes those features more usable. A quick literature search seems to support the hypothesis of OVR being better than multiclass when there are a lot of classes. Of course, it could be the case that the sub-region averages are just bad features, but that doesn't seem proven yet.
 
 --------------------
 
-**5/11/2015**
+**5/11/2016**
 
 Created binning image histogram feature. The function of this processor is two fold: (1) it divides the space of pixel intensities into `n` bins depending on the specified bin size and uses those bins for its histogram, and (2) allows the user to set lower and upper cutoffs for pixel intensity values so that we can potentially ignore too high or too low values. The idea is to clean the signal aggregating together similar pixel values and excluding values that are not informative (i.e., white pixels = 255). This theory is partially informed by a [histogram of pixel values](imgs/pixel-intensity-hist-all.png) from all of the training data ([raw data](imgs/pixel-intensity-values.csv)). This specific histogram is limited at pixel intensity = 250 so that we can actually see the values lower than that. The amount of pixels with values >250 ranges from twice as many to two orders of magnitude greater. Surely this enormous concentration of pixels, which are effectively padding for the interesting part of the image, cannot be relevant? See the following experiments for results (spoiler: they are relevant).
 
@@ -330,7 +330,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment7-lr/met
 - Average Recall = 0.2878
 - Average F1 = 0.2488
 
-Comments: These results are best compared with experiment 6 from 5/9/2015. In every metric, these results are ~3% worse. This is not surprising given what I know now from the other experiments. The only thing left to try in regards to this feature would be a much smaller window size with no overlap, but that will create a ton of features.
+Comments: These results are best compared with experiment 6 from 5/9/2016. In every metric, these results are ~3% worse. This is not surprising given what I know now from the other experiments. The only thing left to try in regards to this feature would be a much smaller window size with no overlap, but that will create a ton of features.
 
 **Experiment 4 - OVR Logistic Regression**  
 Motivation/Hypothesis: Since my more advanced features have not been performing well, I'm returning to my most successful feature set and applying a different model, namely one vs rest logistic regression (instead of multi-class logistic regression).
@@ -396,3 +396,40 @@ Comments: As expected, results are exactly the same.
 
 Questions:
 - Running spark jobs with YARN seems to incur disk serialization at every step which massively slows down the job, how do we run jobs on pure spark using the CMU cluster?
+
+--------------------
+
+**5/12/2016**
+
+**Experiment 4 - Random Forest (v1)**  
+Motivation/Hypothesis: I couldn't get random forests to train in any reasonable amount of time with 500+ features or augmented datasets, so let's try to get it to run to completion on a smaller dataset.
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+
+Results of 5-fold random forest (100 trees, max depth 5) ([Full results](results/experiment4-rf-1/metrics.csv)):
+- Average Precision = 0.1444
+- Average Recall = 0.2290
+- Average F1 = 0.1769
+
+Comments: This didn't perform especially well, but it did actually *work* which is more than I can say for the other times I tried it. Knowing that this baseline configuration works, I will scale up from here. This job also completed much faster than I expected, it took less than an hour. I suspect that this is because I went a little crazy on the memory allotments. However, this makes me think that the memory was too low before. Perhaps it was enough memory to prevent heap space errors but too little memory to keep everything in memory and thus forcing spark to spill some of the data to disk. I don't really have a good way to test this though, other than keep allotting lots of memory for each job and see if the performance stays high.
+
+**Experiment 5 - Random Forest (v1)**  
+Motivation/Hypothesis: Since I know that random forests will work now and possibly complete in a reasonable amount of time, I'm going to try training many more trees with greater depth on a dataset that is highly likely to contain non-linear relationships, which random forests should be able to model better than logistic regression.
+
+Features:
+- dimensions of image (height, width)
+- pixel count
+- normalize image size to 128x128
+- histogram of pixel values (0-255)
+- sub-region averaging (8x8, 0 overlap)
+
+Results of 5-fold random forest (500 trees, max depth 20) ([Full results](results/experiment5-rf-1/metrics.csv)):
+- Average Precision = TODO
+- Average Recall = TODO
+- Average F1 = TODO
+
+Comments: 
