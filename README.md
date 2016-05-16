@@ -1,5 +1,7 @@
 # Plankton Classification
 
+[Lab notebook](doc/LAB-NOTEBOOK.md)
+
 ## Building the artifacts
 
 Prerequisites:
