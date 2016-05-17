@@ -3,6 +3,6 @@
 .settings/**
 bin/**
 build/**
-data/**
+data/train/**
 output/**
 **.log
