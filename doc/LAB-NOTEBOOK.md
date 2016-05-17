@@ -52,7 +52,7 @@ Finally got everything to just work. Spark does not play nice with pretty much a
 Had to create a quick and dirty pipeline abstraction since Spark ml's wasn't exatly cooperating. Everything runs successfully, now to do some feature engineering...
 
 Questions for Ravi:
-- Spark ml vs mllib?
+- Spark ml vs. mllib?
 - Data normalization
 - Data augmentation
 - Image feature extraction in Spark?
@@ -62,7 +62,7 @@ Questions for Ravi:
 **5/3/2016**
 
 From the call today:
-- Spark ml vs mllib
+- Spark ml vs. mllib
   - ml is new pipeline-focused API. Very powerful, not all of the algorithms/models in there yet.
   - mllib is the old API that Spark is moving away from. Has more algorithms/models implemented though.
 - Ideas for data normalization:
@@ -111,7 +111,7 @@ Added a JSON DataSink (output) so that I can finally train and evaluate somethin
 - Removed all `println`'s and replaced them with proper logging (SLF4J + logback).
 
 Refactored the package structure of the project to give everything better logical grouping:
-- `collinm.framework`: feature extraction framework componenets
+- `collinm.framework`: feature extraction framework components
 - `collinm.framework.data`: Runtime data objects
 - `collinm.framework.io`: Input/Output (sources and sinks)
 - `collinm.framework.json`: JSON serialization and deserialization
@@ -141,7 +141,7 @@ Questions:
 
 **5/8/2016**
 
-- Standard Spark way of measuring performance metrics is too strict, so I implemented my own: `collinm.plankton.testing.ConfusionMatrix`. It doesn't work with RDDs, but the performance data is small enought that it doesn't matter.
+- Standard Spark way of measuring performance metrics is too strict, so I implemented my own: `collinm.plankton.testing.ConfusionMatrix`. It doesn't work with RDDs, but the performance data is small enough that it doesn't matter.
 - Refactored some IO code to make it more reusable, namely reading in the processed training data.
 - Added functionality to enable stratified sampling and thus cross validation.
 - Generalized Logistic Regression Runner so that input, output, and k values are *not* hard-coded. Now works properly with `spark-submit`
@@ -164,7 +164,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment2.csv)):
 - Average Recall = 0.3055
 - Average F1 = 0.2821
 
-Comments: 5% increase on precision, 9% increase on recall, and 7% incraese on F1. Dimension of the image clearly carries a lot of signal.
+Comments: 5% increase on precision, 9% increase on recall, and 7% increase on F1. Dimension of the image clearly carries a lot of signal.
 
 **Experiment 3 - Logistic Regression**: `collinmc.plankton.training.Experiment3.java`  
 Motivation/Hypothesis: Does pixel count carry any additional signal that dimensions does not?
@@ -236,7 +236,7 @@ Comments: Overall, performance decreased 3-6% across all of the metrics. Taking 
 
 Comparing the confusion matrices for this experiment to those of experiment 4, this experiment's are much more concentrated on the above 7 classes to the exclusion of most other classes.
 
-The addition of the sub-region average features roughlty tripled the size of the training data. While in and of itself this is probably not a problem, I *suspect* that the structural nature of the sub-region features made it such that there is no longer a single, linear decision boundary; thus, logistic regression is having a hard time making good decisions. I think I'll need to try a non-linear model next, possibly random forests...
+The addition of the sub-region average features roughly tripled the size of the training data. While in and of itself this is probably not a problem, I *suspect* that the structural nature of the sub-region features made it such that there is no longer a single, linear decision boundary; thus, logistic regression is having a hard time making good decisions. I think I'll need to try a non-linear model next, possibly random forests...
 
 The parameters for the sub-regions could be non-optimal as well. I'll need to test different values for window size and overlap to see if it makes any difference. Decreasing window size and/or increasing overlap will have a respectable impact on the number of features though.
 
@@ -273,11 +273,11 @@ FOLLOW-UP NOTE: adding `--conf 'spark.executor.memory=4g'` is also helpful in av
 
 **5/10/2016**
 
-Setup Spark's random forest implementation in my process today; however, it will not run to completion. Using the trainng data from experiment 6, I am unable to even train a full forest. With any number of trees greater than 20, the job will throw an `OutOfMemoryError` citing java heap space and exit. With fewer trees than that, it will run for hours and show no progress. I tried again to run a job on the CMU Spark cluster, but it's still refusing my jobs. This bloated memory profile is apparently a known problem as there's a ticket to slim down the memory usage in the Spark issue tracker.
+Setup Spark's random forest implementation in my process today; however, it will not run to completion. Using the training data from experiment 6, I am unable to even train a full forest. With any number of trees greater than 20, the job will throw an `OutOfMemoryError` citing java heap space and exit. With fewer trees than that, it will run for hours and show no progress. I tried again to run a job on the CMU Spark cluster, but it's still refusing my jobs. This bloated memory profile is apparently a known problem as there's a ticket to slim down the memory usage in the Spark issue tracker.
 
 Since random forests weren't playing nice, I thought I might as well try out the next item in Spark's toolkit: multilayer perceptrons. I wrapped up this code and fed it the training data from experiment 6. It's running as I types this... should take ~3 hours (~40 mins per fold, 5 folds). Update: it took over 12 hours and the performance was terrible, see 5/11/2016.
 
-So far, logistic regression has been the only thing that's tractable to iterate on quickly, but the model cannot accomodate non-linear decision boundaries. However, it's weakness here might be greatly compounded by the 121 boundaries that it has to cram into one model. I think it would be worth trying one random split of a one-vs-rest logistic regression model to see if posing the multi-class problem as 121 binary problems makes those features more usable. A quick literature search seems to support the hypothesis of OVR being better than multiclass when there are a lot of classes. Of course, it could be the case that the sub-region averages are just bad features, but that doesn't seem proven yet.
+So far, logistic regression has been the only thing that's tractable to iterate on quickly, but the model cannot accommodate non-linear decision boundaries. However, it's weakness here might be greatly compounded by the 121 boundaries that it has to cram into one model. I think it would be worth trying one random split of a one-vs-rest logistic regression model to see if posing the multi-class problem as 121 binary problems makes those features more usable. A quick literature search seems to support the hypothesis of OVR being better than multiclass when there are a lot of classes. Of course, it could be the case that the sub-region averages are just bad features, but that doesn't seem proven yet.
 
 --------------------
 
@@ -333,7 +333,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment7-lr/met
 Comments: These results are best compared with experiment 6 from 5/9/2016. In every metric, these results are ~3% worse. This is not surprising given what I know now from the other experiments. The only thing left to try in regards to this feature would be a much smaller window size with no overlap, but that will create a ton of features.
 
 **Experiment 4 - OVR Logistic Regression**  
-Motivation/Hypothesis: Since my more advanced features have not been performing well, I'm returning to my most successful feature set and applying a different model, namely one vs rest logistic regression (instead of multi-class logistic regression).
+Motivation/Hypothesis: Since my more advanced features have not been performing well, I'm returning to my most successful feature set and applying a different model, namely one vs. rest logistic regression (instead of multi-class logistic regression).
 
 Features:
 - dimensions of image (height, width)
@@ -361,7 +361,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment8-lr/met
 - Average Recall = 0.3199
 - Average F1 = 0.2946
 
-Comments: Comparing directly against experiment 4 with logistic regression (prec=0.3169, rec=0.3590, f1=0.3366), these results are uniformly worse by ~4%. My hypothesis was that binning would make the signal cleaner by aggreagting similar pixel values, but instead that aggregation has removed important signal. I'd like to do another iteration of this experiment where the cutoffs are not used and only the binning is performed. This should help to elucidate the signal of all those white or very near white pixels.
+Comments: Comparing directly against experiment 4 with logistic regression (prec=0.3169, rec=0.3590, f1=0.3366), these results are uniformly worse by ~4%. My hypothesis was that binning would make the signal cleaner by aggregating similar pixel values, but instead that aggregation has removed important signal. I'd like to do another iteration of this experiment where the cutoffs are not used and only the binning is performed. This should help to elucidate the signal of all those white or very near white pixels.
 
 **Experiment 8_1 - Logistic Regression**: `collinm.plankton.training.Experiment8_1.java`  
 Motivation/Hypothesis: This experiment is conceptually similar to experiment 8 except that the pixel intensity cutoffs of the binning histogram will not be used. This should help to measure the signal from the white or very near white pixels.
@@ -376,7 +376,7 @@ Results of 5-fold logistic regression ([Full results](results/experiment8_1-lr/m
 - Average Recall = 0.3364
 - Average F1 = 0.3130
 
-Comments: Results are ~2% better across all metrics, indiacting that the very high value pixels carry non-trivial signal. Do not throw those away! It also confirms that binning is throwing away signal, as these results are still ~2% worse than the normal histogram.
+Comments: Results are ~2% better across all metrics, indicating that the very high value pixels carry non-trivial signal. Do not throw those away! It also confirms that binning is throwing away signal, as these results are still ~2% worse than the normal histogram.
 
 **Experiment 4 - Logistic Regression (v2)**: `collinm.plankton.training.Experiment4.java`  
 Motivation/Hypothesis: I'm re-running this experiment in order to generate confusion matrices to compare against other experiments.
@@ -427,9 +427,10 @@ Features:
 - histogram of pixel values (0-255)
 - sub-region averaging (8x8, 0 overlap)
 
-Results of 5-fold random forest (500 trees, max depth 20) ([Full results](results/experiment5-rf-1/metrics.csv)):
-- Average Precision = TODO
-- Average Recall = TODO
-- Average F1 = TODO
+Results of 5-fold random forest (500 trees, max depth 20):
+- Average Precision = N/A
+- Average Recall = N/A
+- Average F1 = N/A
 
-Comments: 
+**UPDATE** 5/16/2016  
+Comments: After failing to complete even a single fold of the above experiment after 48 hours of runtime, the job was mysteriously terminated on the shared cluster. There isn't enough time to run it again.
